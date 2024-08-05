@@ -1,0 +1,24 @@
+---
+# VBox IP  Address
+ip_address:     192.168.0.51
+#
+# Bridge Type: "ens33", "ens160", "enp0s8" | Wi-Fi: "wlo1"
+name_bridge:    "eth0" 
+#
+# SO Distro
+type_vbox:      "ubuntu/focal64"
+#
+# VBox Prompt Local Name
+vm_hostname:    "developer" # developer, operation, tester, homolog,  production
+#
+# VBox Virtualbox Name 
+vm_name:        "vm-voll-01"
+#
+# Vbox Logical Name
+app_name:       "voll_01"
+#
+# Path for VBox Ansible Provision 
+ansible_path:   "/home/developer/vms-vagrant/vm-voll-01/playbook.yml"
+#
+...
+

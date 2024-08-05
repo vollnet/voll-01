@@ -1,0 +1,192 @@
+
+# Ansible Modalidade Vollbasic based over Ubuntu focal 20.04 On-promise
+# 
+#
+
+# Application name + Worker + Version
+#
+# Worker: Devops Environment [Operation = OP, Development = DV, tester (pre-production) = TT, homolog = HM, production = PD)
+#
+# Vs 0.0.0
+#    | | |
+#    | | |
+#    | | Revision Patch (changes, otimizations, corrections)
+#    | |
+#    | Structure Modify (Add new functions, removed functions)
+#    |
+#    Stage (0: development, >=1: production) 
+# 
+# Examples:
+# 
+# AppType AppName             Worker   Version    Status
+# -----------------------------------------------------------------------
+# WebApp: Clinical Schedule   OP       0.1.0      Launched
+#                             OP       0.1.1      Revision
+#                             OP       0.2.0      Launched 
+#                             OP       0.2.1      Released
+#                             DV       0.1.0      Launched
+#                             DV       0.1.1      Revision
+#                             DV       0.1.1      Released
+#                             TT       0.1.0      Launched
+#                             TT       0.1.1      Revision
+#                             TT       0.1.1      Released
+#                             HM       0.1.0      Launched
+#                             HM       0.1.1      Revision
+#                             HM       0.1.1      Released
+#                             PD       0.1.0      Launched
+#                             PD       0.1.1      Revision
+#                             PD       0.1.1      Released
+# End-of-Cycle                PD       1.0.0      Destined         
+
+#
+# Stage-0 Update/Upgrade & Configurations   <<<<<<<<<<<<<<<<<<<<<<
+#
+
+---
+
+- hosts: all
+  become_user: vagrant
+  become_method: sudo
+  become: true
+
+#
+# Stage-1 Update/Upgrade & Configurations   <<<<<<<<<<<<<<<<<<<<<<
+#
+
+- name: VM Provision Start ............
+  hosts: all
+  gather_facts: no
+  vars:
+    vm_name: "vm-voll" # alterar 'vm_name' no vagrant.yml
+
+  tasks: 
+    - name: Set timezone to America/Sao_Paulo
+      user:
+        name: vagrant
+        shell: timedatectl set-timezone America/Sao_Paulo
+        groups: sudo
+        append: yes
+      become: yes
+
+    - name: current date initial automation
+      debug:
+        msg: "{{'%Y-%m-%d'|strftime }}"
+      become: yes
+ 
+    - name: current time initial automation
+      debug:
+        msg: "{{ '%H:%M:%S'|strftime }}"
+      become: yes
+    
+    - name: Set User Group for the VM-Vagrant
+      user:
+        name: vagrant
+        shell: /bin/bash
+        groups: sudo
+        append: yes
+      become: yes
+
+    - name: Permission for user vagrant
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: '^%vagrant'
+        line: '%vagrant ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
+      become: yes
+
+    - name: Stop and Start ssh service
+      service:
+        name: ssh
+        state: restarted
+      become: yes
+    
+    - name: VBox Intenal IP ADDRESS
+      debug:
+        msg: "{{ ansible_enp0s8.ipv4.address }}"
+      become: yes
+ 
+    - name: Initial ping VM target
+      ping:
+
+    - name: Update apt cache
+      apt: update_cache=yes cache_valid_time=3600
+      become: yes
+
+    - name: Upgrade all apt packages
+      apt: upgrade=dist
+      become: yes
+
+    - name: Install dependencies
+      apt:
+        name: "{{ packages }}"
+        state: present
+        update_cache: yes
+      vars:
+        packages:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - software-properties-common
+        - gnupg-agent
+        - net-tools
+      become: yes  
+
+    - name: Install apt utils
+      apt:
+        name: build-essential
+        state: latest
+      become: yes
+
+#
+# Stage-2 Basic Install       <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+#
+    - name: Install Tree
+      apt:
+        name: tree
+        state: present
+        update_cache: yes
+      become: yes
+
+    - name: install zip and unzip
+      become_method: sudo
+      apt: name={{ item }} state=present
+      with_items:
+        - zip
+        - unzip
+      become: true
+
+
+#
+# Stage-11 Finishing          <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+#                           
+    - name: Remove old packages
+      apt:
+        autoremove: yes
+      become: yes
+
+    - name: Update all packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+      become: yes
+
+    - name: Final ping VM target !!
+      ping:
+
+    # end automation ...
+
+    - name: current date initial automation
+      debug:
+        msg: "{{'%Y-%m-%d'|strftime }}"
+      become: yes
+ 
+    - name: current time initial automation
+      debug:
+        msg: "{{ '%H:%M:%S'|strftime }}"
+      become: yes
+
+#
+# End 
+#
+
